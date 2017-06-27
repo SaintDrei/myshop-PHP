@@ -14,6 +14,21 @@
 
     $userName = "John Doe";
     $userType = "Administrator";
+
+    #session_start();
+    if(isset($_SESSION['userid']))
+    {
+        $userid = $_SESSION['userid'];
+        $sql_user = "SELECT u.firstName, u.lastName, t.UserType FROM Users u INNER JOIN Types t ON u.typeID = t.typeID WHERE u.userID=$userid";
+        $result_user = $con->query($sql_user) or die(mysqli_error($con));
+        while($row = mysqli_fetch_array($result_user))
+        {
+            $fn = $row['firstName'];
+            $ln = $row['lastName'];
+            $username = $fn . ' ' . $ln;
+            $userType = row['userType'];
+        }
+    }
 ?>
 <!DOCTYPE html>
 
