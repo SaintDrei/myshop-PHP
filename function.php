@@ -81,4 +81,32 @@
 		$mail->AddAddress($email);
 		$mail->Send();
 	}
+
+function getPrice($con, $pid){
+    $sql_price = "SELECT price FROM products WHERE productID=$pid";
+    $result_price = $con->query($sql_price);
+    while ($row = mysqli_fetch_array($result_price))
+    {
+        $price = floatval($row['price']);
+        
+    }
+}
+
+function addToCart($con, $pid, $qty){
+    if (isset($_SESSION['userid']))
+    {
+        $uid = $_SESSION['userid'];
+    } else {
+        $uid = 1;
+    }
+    
+    $price = getPrice($con, $pid);
+    $amount = floatval($qty) * floatval($price);
+    
+    //$sql_insert = "INSERT INTO orderdetails VALUES('', 0, $uid, $pid, $qty, $price, $amount, NOW() )";
+    $sql_insert = "INSERT INTO orderdetails (orderNo, userID, productID, quantity, price, amount, dateAdded) VALUES ('0', '$uid', '$pid', '$qty', '$price', '$amount', NOW())";
+    $result_insert = $con->query($sql_insert) or die (mysqli_error($con));
+}
+
+
 ?>
