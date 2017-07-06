@@ -161,6 +161,17 @@
 		?>
 	</div>
 </form>
+<script>
+	$('.cart').on('click', function(event){
+		event.preventDefault();
+		var pid = $(this).data('pid');
+		var myURL = 'addtocart.php?p=' + pid + '&qty=1';
+		$.ajax({
+            url:myURL
+            
+        });
+	});
+</script>
 
 <?php
 	include_once('includes/footer.php');

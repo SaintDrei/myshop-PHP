@@ -82,6 +82,25 @@
 		$mail->Send();
 	}
 
+
+
+function isExisting($con, $pid)
+	{
+		$sql_check = "SELECT detailID FROM orderdetails
+			WHERE orderNo=0 AND userID=1 AND productID=$pid";
+
+		$result_check = $con->query($sql_check) or die(mysqli_error($con));
+		if (mysqli_num_rows($result_check) > 0)
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		} 
+		//return mysqli_num_rows($result_check) > 0 ? true : false;
+	}
+
 function getPrice($con, $pid){
     $sql_price = "SELECT price FROM products WHERE productID=$pid";
     $result_price = $con->query($sql_price);
@@ -104,8 +123,19 @@ function addToCart($con, $pid, $qty){
     $amount = floatval($qty) * floatval($price);
     
     //$sql_insert = "INSERT INTO orderdetails VALUES('', 0, $uid, $pid, $qty, $price, $amount, NOW() )";
-    $sql_insert = "INSERT INTO orderdetails (orderNo, userID, productID, quantity, price, amount, dateAdded) VALUES ('0', '$uid', '$pid', '$qty', '$price', '$amount', NOW())";
-    $result_insert = $con->query($sql_insert) or die (mysqli_error($con));
+    $sql_insert = "INSERT INTO orderdetails (orderNo, userID, productID, quantity, price, amount, dateAdded) VALUES ('0', '$uid', '$pid', $qty, $price, $amount, NOW())";
+    
+    
+    $sql_update = "UPDATE orderdetails SET quantity = quantity + $qty, amount = amount + $amount WHERE orderNo = 0 AND userID = $uid AND productID = $pid";
+    
+    if(isExisting($con, $pid)){
+        $result_update = $con->query($sql_update) or die(mysqli_error($con));    
+    } else{
+        $result_insert = $con->query($sql_insert) or die (mysqli_error($con));    
+    }
+    
+    
+    
 }
 
 
