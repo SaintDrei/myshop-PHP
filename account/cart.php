@@ -75,7 +75,7 @@ while ($row2 = mysqli_fetch_array($result_compute))
 			<table class="table table-hover">
 				<tr>
 					<td>Gross Amount</td>
-					<td align='right'>P<?php echo $gross; ?></td>
+					<td align='right'>P<?php echo number_format($gross, 2, '.', ','); ?></td>
 				</tr>
 				<tr>
 					<td>VAT</td>
