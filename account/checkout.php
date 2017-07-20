@@ -9,6 +9,10 @@
 		INNER JOIN categories c ON p.catID = c.CatID
 		WHERE od.orderNo=0 AND od.userID=1";
 	$result_cart = $con->query($sql_cart) or die(mysqli_error($con));
+if (mysqli_num_rows($result_cart) == 0)
+{
+    header('location: ../products.php');
+}
 	$list_cart = "";
 	while ($row = mysqli_fetch_array($result_cart))
 	{
@@ -50,8 +54,71 @@ while($row3 = mysqli_fetch_array($result_cities))
 {
     $cityID = $row3['cityID'];
     $cityName = $row3['name'];
-    
+    //$selected = $cID == $cityID ? "selected" : "";
     $list_cities .= "<option value='$cityID'>$cityName</option>";
+    
+}
+
+if(isset($_POST['checkout']))
+{
+    $fn = mysqli_real_escape_string($con, $_POST['fn']);
+    $ln = mysqli_real_escape_string($con, $_POST['ln']);
+    $email = mysqli_real_escape_string($con, $_POST['email']);
+    $st = mysqli_real_escape_string($con, $_POST['st']);
+    $muni = mysqli_real_escape_string($con, $_POST['muni']);
+    $city = mysqli_real_escape_string($con, $_POST['cities']);
+    $phone = mysqli_real_escape_string($con, $_POST['phone']);
+    $mobile = mysqli_real_escape_string($con, $_POST['mobile']);
+    
+    $sql_update = "UPDATE users SET firstName = 
+    '$fn', lastName = '$ln', email='$email', street='$st', municipality='$muni', mobile='$mobile', cityID =$city, phone='$phone', lastModified=NOW() WHERE userID = $userID";
+    $con->query($sql_update) or die(mysqli_error($con));
+    
+    $payment = mysqli_real_escape_string($_POST['payment']);
+    
+    $sql_order = "INSERT INTO orders VALUES ('', '$payment' NOW() NULL, 'Pending')";
+    
+    $con->query ($sql_order) or die(mysqli_error($con));
+    
+    $orderNo = $con->insert_id;
+    
+    # Step 3 : Update Cart Items / Clear Cart
+    
+    $sql_update_cart = "UPDATE orderDetails SET orderNo = $orderNo WHERE orderNo=0 AND userID = $userID";
+    $con->query($sql_update_cart) or die(mysqli_error($con));
+    
+    # Step 4: 
+    $sql_delivery = "INSERT INTO deliveries VALUES ('', $orderNo, NOW() + INTERVAL 7 DAY, NULL, '', 'Pending')";
+    $con->query($sql_delivery) or die(mysqli_error($con));
+    
+    # Step 5 : Send Email Confirmation
+    $subject = "Your Order #orderNo Has Been Received";
+    $currentDate = getdate();
+    $message = "Dear $fn $ln, <br/><br/>
+    We have received your order. <br>
+    Here are the details : <br> <br>
+    <strong>Order #:</strong> $ordderNo<br>
+    <strong>Order Date:</strong> $orderDate<br>
+    <strong>Payment Method:</strong>$payment<br>
+    <strong>Address:</strong>$st, $muni<br><br>
+    <strong>Landline: </strong> $phone<br>
+    <strong>Mobile:</strong>$mobile<br>
+    <table width=100% border=0>
+        <thead>
+            <th>Name</th>
+            <th>Price</th>
+            <th>Quantity</th>
+            <th>Amount</th>
+        </thead>
+        <tbody>
+            $list_orders
+            <tr>
+                <td colspan='3' align='right'> <strong> Total Amount</strong></td>
+                <td align='right'>
+                
+        </tbody>
+    "
+    //header('location: orders');
 }
 
 $userID = isset($_SESSION['userid']) ? SESSION['userid'] : 1;
@@ -70,8 +137,9 @@ while($row4 = mysqli_fetch_array($result_user))
     $mobile = $row['mobile'];
 }
 ?>
+<form class="form-horizontal" method="POST">
 	<div class="col-lg-8">
-		<form class="form-horizontal" method="POST">
+		
 			<table class="table table-hover">
 				<thead>
 					<th colspan="2">Item</th>
@@ -140,9 +208,9 @@ while($row4 = mysqli_fetch_array($result_user))
 						<input name="mobile" type="text" class="form-control" value='<?php echo $mobile; ?>' required />
 					</div>
 				</div>
-			</div>
-		</form>
+			</div> 
 	</div>
+
 	<div class="col-lg-4">
 		<div class="well">
 			<h3 class="text-center">Order Summary</h3>
@@ -173,6 +241,7 @@ while($row4 = mysqli_fetch_array($result_user))
 			</button>
 		</div>
 	</div>
+</form>
 	<div class='row'></div>
 
 <?php
