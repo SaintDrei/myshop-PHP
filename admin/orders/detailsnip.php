@@ -1,26 +1,19 @@
-<!--
-if button approve click,
-update status = "Approved" 
-approveDate = NOW()
-
-redirect index.php
--->
-
 <?php
-    if (isset($_REQUEST['no']))
-    {
-    $orderNo = $_REQUEST['no'];
-    
-	$page_title = "Order #$orderNo Details";	include_once('../../includes/header_admin.php');
+	if (isset($_REQUEST['no']))
+	{
+		$orderNo = $_REQUEST['no'];
 
-	$sql_order = "SELECT od.DetailID, od.ProductID, p.Image,
-		p.Name, c.Name AS Category, p.Price, od.Quantity,
-		od.Amount FROM orderdetails od
-		INNER JOIN products p ON od.productID = p.productID
-		INNER JOIN categories c ON p.catID = c.CatID
-		WHERE od.orderNo=0 AND od.userID=1";
-	$result_order = $con->query($sql_order) or die(mysqli_error($con));
-        $list_order = "";
+		$page_title = "Order #$orderNo Details";
+		include_once('../../includes/header_admin.php');
+
+		$sql_order = "SELECT od.DetailID, od.ProductID, p.Image,
+			p.Name, c.Name AS Category, p.Price, od.Quantity,
+			od.Amount FROM orderdetails od
+			INNER JOIN products p ON od.productID = p.productID 
+			WHERE od.orderNo=$orderNo";
+		$result_order = $con->query($sql_order) or die(mysqli_error($con));
+        
+		$list_order = "";
 		while ($row = mysqli_fetch_array($result_order))
 		{
 			$did = $row['DetailID'];
@@ -43,58 +36,7 @@ redirect index.php
 							</tr>";
 		}
 
-	$sql_compute = "SELECT SUM(amount) FROM orderdetails
-		WHERE orderNo=$orderNo";
-	$result_compute = $con->query($sql_compute) or die(mysqli_error($con));
-	while ($row2 = mysqli_fetch_array($result_compute))
-	{
-		$total = $row2[0];
-		$gross = $total * .88;
-		$VAT = $total * .12;
-	}
-
-	$userID = isset($_SESSION['userid']) ? SESSION['userid'] : 1;
-
-	$sql_user = "SELECT u.firstName, u.lastName, u.email,
-		u.street, u.municipality, c.name AS cityName, u.landline,
-		u.mobile FROM users u INNER JOIN cities c ON u.cityID = c.cityID  WHERE userID=$userID";
-
-	$result_user = $con->query($sql_user) or die(mysqli_error($con));
-	while ($row3 = mysqli_fetch_array($result_user))
-	{
-		$firstName = $row3['firstName'];
-		$lastName = $row3['lastName'];
-		$emailAdd = $row3['email'];
-		$street = $row3['street'];
-		$municipality = $row3['municipality'];
-		$city = $row3['cityName'];
-		$landline = $row3['landline'];
-		$mobile = $row3['mobile'];
-	}
-        
-        while ($row = mysqli_fetch_array($result_order))
-		{
-			$did = $row['DetailID'];
-			$pid = $row['ProductID'];
-			$image = $row['Image'];
-			$pname = $row['Name'];
-			$cat = $row['Category'];
-			$price = number_format($row['Price'], 2, '.', ',');
-			$qty = $row['Quantity'];
-			$amount = number_format($row['Amount'], 2, '.', ',');
-
-			$list_order .=  "<tr>
-								<td><img src='../../images/products/$image' width='150' /></td>
-								<td><h3>$pname</h3>
-									<small><em>$cat</em></small>
-								</td>
-								<td>P$price</td>
-								<td>$qty<td/>
-								<td>P$amount</td>
-							</tr>";
-		}
-
-        $sql_summary = "SELECT o.status, o.orderDate, o.paymentMethod,
+		$sql_summary = "SELECT o.status, o.orderDate, o.paymentMethod,
 			o.approveDate,
 			(SELECT SUM(od.amount) FROM orderdetails od
 			WHERE od.orderNo = o.orderNo) AS totalAmount
@@ -111,7 +53,32 @@ redirect index.php
 			$gross = $total * .88;
 			$VAT = $total * .12;
 		}
-    }
+
+		$sql_user = "SELECT u.firstName, u.lastName, u.email,
+			u.street, u.municipality, c.name AS cityName, u.landline,
+			u.mobile FROM orderdetails od
+			INNER JOIN users u ON od.userID = u.userID 
+			INNER JOIN cities c ON u.cityID = c.cityID
+			WHERE od.orderNo=$orderNo";
+
+		$result_user = $con->query($sql_user) or die(mysqli_error($con));
+		while ($row3 = mysqli_fetch_array($result_user))
+		{
+			$firstName = $row3['firstName'];
+			$lastName = $row3['lastName'];
+			$emailAdd = $row3['email'];
+			$street = $row3['street'];
+			$municipality = $row3['municipality'];
+			$cityName = $row3['cityName'];
+			$landline = $row3['landline'];
+			$mobile = $row3['mobile'];
+		}
+	}
+	else
+	{
+		header('location: index.php');
+	}
+	
 ?>
 	<form class="form-horizontal" method="POST">
 	<div class="col-lg-8">
@@ -171,7 +138,7 @@ redirect index.php
 					<label class="control-label col-lg-4">City</label>
 					<div class="col-lg-8">
 						<input name="muni" type="text" class="form-control"
-						value="<?php echo $city ?>" disabled />
+						value="<?php echo $cityName ?>" disabled />
 					</div>
 				</div>
 				<div class="form-group">
