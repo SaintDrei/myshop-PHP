@@ -144,4 +144,18 @@
 			$result_insert = $con->query($sql_insert) or die(mysqli_error($con));
 		}
 	}
+    
+    # Step 2 : Update Inventory Record
+    function updateInventory($con, $pid, $qty){
+        $sql_update = "UPDATE products SET available = available - $qty, lastModified = NOW() WHERE productID = $pid";
+        $con->query($sql_update) or die(mysqli_error($con));
+    }
+
+    # Step 3 : Insert log - Inventory
+    function logMovement($con, $ref, $type, $pid, $qty){
+        $sql_log = "INSERT INTO logs VALUES ('', $ref, '$type', $pid, $qty, NOW())";
+        $con->query($sql_log) or die(mysqli_error($con));
+    }
+
+
 ?>

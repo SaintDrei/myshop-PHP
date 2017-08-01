@@ -7,12 +7,16 @@ redirect index.php
 -->
 
 <?php
+
+    
     if (isset($_REQUEST['no']))
     {
     $orderNo = $_REQUEST['no'];
     
 	$page_title = "Order #$orderNo Details";	include_once('../../includes/header_admin.php');
 
+        
+    
 	$sql_order = "SELECT od.DetailID, od.ProductID, p.Image,
 		p.Name, c.Name AS Category, p.Price, od.Quantity,
 		od.Amount FROM orderdetails od
@@ -111,6 +115,39 @@ redirect index.php
 			$gross = $total * .88;
 			$VAT = $total * .12;
 		}
+    }
+
+    if(isset($_POST['approve']))
+    {
+        $sql_approve = "UPDATE orders SET status='Approved', approveDate = NOW() WHERE orderNo = $orderNo";
+        $con->query($sql_approve) or die(mysqli_error($con));
+        header('location: index.php');
+        
+    } else if (isset($_POST['deliver'])){
+        # Step 1 : Identify product(s) and quantity to be delivered.
+        $sql_items = "SELECT productID, quantity FROM orderdetails WHERE orderNo=$orderNo"; 
+        $result_items = $con->query($sql_items) or die(mysqli_error($con));
+        while($row4 = mysqli_fetch_array($result_items))
+        {
+            $productID = $row4['productID'];
+            $quantity = $row4['quantity'];
+            
+            # Step 2: Update Inventory
+            updateInventory($con, $productID, $quantity);
+            
+            # Step 3: Log Inventory Movement
+            logMovement($con, $orderNo, 'OUT', $productID, $quantity);
+        }
+        
+        $sql_orders = "UPDATE orders SET status='Completed' WHERE orderNo=$orderNo";
+        $con->query($sql_orders) or die(mysqli_error($con));
+        
+        $sql_delivery = "UPDATE deliveries SET status='Completed', deliverDate=NOW() WHERE orderNo=$orderNo";
+        
+        $con->query($sql_delivery) or die(mysqli_error($con));
+        
+        
+        header('location: index.php');
     }
 ?>
 	<form class="form-horizontal" method="POST">
@@ -225,11 +262,12 @@ redirect index.php
 			</table>
 			<hr/>
 			<button name='approve' class='btn btn-success btn-block btn-lg'
-				onclick='return confirm("Approve order?");'>
+				onclick='return confirm("Approve order?");' <?php echo $status=="Approved" ? "disabled" : ""; ?>>
 				Approve
 			</button>
 			<button name='deliver' class='btn btn-success btn-block btn-lg'
-				onclick='return confirm("Deliver order?");'>
+				onclick='return confirm("Deliver order?");' <?php echo $status=='Pending' ? 'disabled' : '';?>>
+                
 				Deliver Items
 			</button>
 		</div>
